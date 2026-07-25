@@ -13,7 +13,9 @@ function SearchInput({searchValue, onSearchChange}){
 
 function App() {
   const [searchInput, setSearchInput] = useState('')
+  const [matchingShow, setMatchingShow] = useState([])
 
+  // Refetches automatically whenever searchInput changes (runs on every keystroke for now — debounce comes later)
   useEffect(() => {
     fetch(`https://api.themoviedb.org/3/search/tv?query=${searchInput}`, {
       headers: {
@@ -22,7 +24,9 @@ function App() {
       }
     })
     .then(response => response.json())
-    .then(data => console.log(data))
+    .then(data => {
+      setMatchingShow(data.results)
+    })
   }, [searchInput])
 
   // Keeps React state as the single source of truth for the input (controlled component)
@@ -35,6 +39,11 @@ function App() {
       <h1>Binge-watch calculator</h1>
       <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
       <p>{searchInput}</p>
+      <ul>
+        {matchingShow && matchingShow.map(show => {
+          return <li key={show.id}>{show.name}</li>
+        })}
+      </ul>
     </>
   )
 }
