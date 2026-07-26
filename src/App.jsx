@@ -47,6 +47,13 @@ function App() {
 
   // Refetches automatically whenever searchInput changes
   useEffect(() => {
+    // Skip fetching for very short input, and clear old results
+    // so they don't linger on screen if the search box is cleared
+    if (searchInput.length < 2 ){
+      setMatchingShow([])
+      return
+    }
+    
     // Waits 500ms after the last change to searchInput before fetching,
     // so a fetch only fires once typing pauses, not on every keystroke
     const timeoutId = setTimeout(() => {
