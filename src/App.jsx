@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
+// A plain function, not a component — pure, reusable, no state involved
+function getPosterUrl(posterPath){
+  const posterBaseUrl = 'https://image.tmdb.org/t/p/'
+  const posterSize = 'w185'
+  return posterPath
+    ? `${posterBaseUrl}${posterSize}${posterPath}`
+    : '/images/poster-placeholder.png'
+}
+
 function SearchInput({searchValue, onSearchChange}){
   return (
     <input
@@ -11,11 +20,24 @@ function SearchInput({searchValue, onSearchChange}){
   )
 }
 
+function ShowList({shows}){
+  return (
+    <ul>
+      {shows && shows.map(show => {
+        return (
+          <li key={show.id}>
+            <img src={getPosterUrl(show.poster_path)} alt={`${show.name} poster`} />
+            {show.name}
+            </li>
+        )
+      })}
+    </ul>
+    )
+}
+
 function App() {
   const [searchInput, setSearchInput] = useState('')
   const [matchingShow, setMatchingShow] = useState([])
-  const posterBaseUrl = 'https://image.tmdb.org/t/p/'
-  const posterSize = 'w185'
 
   // Refetches automatically whenever searchInput changes
   useEffect(() => {
@@ -51,20 +73,7 @@ function App() {
       <h1>Binge-watch calculator</h1>
       <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
       <p>{searchInput}</p>
-      <ul>
-        {matchingShow && matchingShow.map(show => {
-          const posterUrl = show.poster_path
-            ? `${posterBaseUrl}${posterSize}${show.poster_path}`
-            : '/images/poster-placeholder.png'
-
-          return (
-            <li key={show.id}>
-              <img src={posterUrl} alt={`${show.name} poster`} />
-              {show.name}
-              </li>
-          )
-        })}
-      </ul>
+      <ShowList shows={matchingShow} />
     </>
   )
 }
