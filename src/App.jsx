@@ -23,7 +23,7 @@ function SearchInput({searchValue, onSearchChange}){
 function ShowList({shows}){
   return (
     <ul>
-      {shows && shows.map(show => {
+      {shows && shows.slice(0, 6).map(show => {
         return (
           <ShowListItem key={show.id} show={show} />
         )
