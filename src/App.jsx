@@ -25,14 +25,20 @@ function ShowList({shows}){
     <ul>
       {shows && shows.map(show => {
         return (
-          <li key={show.id}>
-            <img src={getPosterUrl(show.poster_path)} alt={`${show.name} poster`} />
-            {show.name}
-            </li>
+          <ShowListItem key={show.id} show={show} />
         )
       })}
     </ul>
     )
+}
+
+function ShowListItem({show}){
+  return (
+    <li>
+      <img src={getPosterUrl(show.poster_path)} alt={`${show.name} poster`} />
+      {show.name}
+    </li>
+  )
 }
 
 function App() {
