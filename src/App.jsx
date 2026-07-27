@@ -20,21 +20,21 @@ function SearchInput({searchValue, onSearchChange}){
   )
 }
 
-function ShowList({shows}){
+function ShowList({shows, onSelectedShow}){
   return (
     <ul>
       {shows && shows.slice(0, 6).map(show => {
         return (
-          <ShowListItem key={show.id} show={show} />
+          <ShowListItem key={show.id} show={show} onSelectedShow={onSelectedShow} />
         )
       })}
     </ul>
     )
 }
 
-function ShowListItem({show}){
+function ShowListItem({show, onSelectedShow}){
   return (
-    <li>
+    <li onClick={() => onSelectedShow(show)}>
       <img src={getPosterUrl(show.poster_path)} alt={`${show.name} poster`} />
       {show.name}
     </li>
@@ -44,6 +44,7 @@ function ShowListItem({show}){
 function App() {
   const [searchInput, setSearchInput] = useState('')
   const [matchingShow, setMatchingShow] = useState([])
+  const [selectedShow, setSelectedShow] = useState(null)
 
   // Refetches automatically whenever searchInput changes
   useEffect(() => {
@@ -80,13 +81,19 @@ function App() {
   const handleSearchChange = (e) => {
     setSearchInput(e.target.value)
   }
-  
+
+  const handleSelectedShow = (show) => {
+    setSelectedShow(show)
+    setMatchingShow([])
+  }
+
   return (
     <>
       <h1>Binge-watch calculator</h1>
       <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
       <p>{searchInput}</p>
-      <ShowList shows={matchingShow} />
+      <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
+      {selectedShow && <p>Selected: {selectedShow.name}</p>}
     </>
   )
 }
