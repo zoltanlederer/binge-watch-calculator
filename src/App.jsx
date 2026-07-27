@@ -10,6 +10,18 @@ function getPosterUrl(posterPath){
     : '/images/poster-placeholder.png'
 }
 
+// Sums every episode's runtime across every season into one total.
+// Nested reduce: outer loop walks seasons, inner loop sums that season's episodes.
+function getTotalRuntimeMinutes(seasonsData){
+  console.log(seasonsData)
+  return seasonsData.reduce((total, season) => {
+    const seasonMinutes = season.episodes.reduce((sum, episode) => {
+      return sum + episode.runtime
+    }, 0)
+    return total + seasonMinutes
+  }, 0)
+}
+
 function SearchInput({searchValue, onSearchChange}){
   return (
     <input
@@ -129,6 +141,9 @@ function App() {
     setMatchingShow([])
   }
 
+  seasonsData.length > 0 && console.log(getTotalRuntimeMinutes(seasonsData))
+  // seasonsData.length > 0 && getTotalRuntimeMinutes(seasonsData)
+
   return (
     <>
       <h1>Binge-watch calculator</h1>
@@ -136,6 +151,7 @@ function App() {
       <p>{searchInput}</p>
       <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
       {selectedShow && <p>Selected: {selectedShow.name}</p>}
+      {seasonsData.length > 0 && <p>{getTotalRuntimeMinutes(seasonsData)}</p>}
     </>
   )
 }
