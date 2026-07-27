@@ -45,6 +45,16 @@ function App() {
   const [searchInput, setSearchInput] = useState('')
   const [matchingShow, setMatchingShow] = useState([])
   const [selectedShow, setSelectedShow] = useState(null)
+  const [showDetails, setShowDetails] = useState(null)
+  const [seasonsData, setSeasonsData] = useState([])
+
+  const tmdbBaseUrl = 'https://api.themoviedb.org/3'
+  const fetchHeader = {
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_TMDB_API_TOKEN}`,
+        accept: "application/json"
+      }
+    }
 
   // Refetches automatically whenever searchInput changes
   useEffect(() => {
@@ -58,12 +68,7 @@ function App() {
     // Waits 500ms after the last change to searchInput before fetching,
     // so a fetch only fires once typing pauses, not on every keystroke
     const timeoutId = setTimeout(() => {
-      fetch(`https://api.themoviedb.org/3/search/tv?query=${searchInput}`, {
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_TMDB_API_TOKEN}`,
-          accept: "application/json"
-        }
-      })
+      fetch(`${tmdbBaseUrl}/search/tv?query=${searchInput}`, fetchHeader)
         .then(response => response.json())
         .then(data => {
           setMatchingShow(data.results)
@@ -76,6 +81,43 @@ function App() {
       clearTimeout(timeoutId)
     }
   }, [searchInput])
+
+  useEffect(() => {
+    if (!selectedShow) { return }
+    fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}`, fetchHeader)
+    .then(response => response.json())
+    .then(data => {
+      setShowDetails(data)
+
+      const fetches = []
+      for(let i = 1; i <= data.number_of_seasons; i++){
+        fetches.push(fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}/season/${i}`, fetchHeader))
+      }
+
+      // Fetches every season individually (TMDB doesn't return per-episode
+      // runtimes on the main /tv/{id} endpoint), then waits for all season
+      // requests to finish before parsing their responses as JSON
+      Promise.all(fetches)
+      .then(response => {
+        return Promise.all(response.map(response => response.json()))
+      })
+      .then(data => {
+        // Reshapes TMDB's season/episode data down to just the fields
+        // this app actually needs (season/episode numbers and runtime)
+        const allData = data.map(item => {
+            return {
+              name: item.name,
+              episodes: item.episodes.map(episode => ({
+                season_number: episode.season_number,
+                episode_number: episode.episode_number,
+                runtime: episode.runtime
+              }))
+            }
+          })
+        setSeasonsData(allData)
+      })
+    })
+  }, [selectedShow])
 
   // Keeps React state as the single source of truth for the input (controlled component)
   const handleSearchChange = (e) => {
