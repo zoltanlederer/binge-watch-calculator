@@ -13,13 +13,22 @@ function getPosterUrl(posterPath){
 // Sums every episode's runtime across every season into one total.
 // Nested reduce: outer loop walks seasons, inner loop sums that season's episodes.
 function getTotalRuntimeMinutes(seasonsData){
-  console.log(seasonsData)
   return seasonsData.reduce((total, season) => {
     const seasonMinutes = season.episodes.reduce((sum, episode) => {
       return sum + episode.runtime
     }, 0)
     return total + seasonMinutes
   }, 0)
+}
+
+function formatWatchTime(totalMinutes){
+  // converts raw minutes into days/hours/minutes for display —
+  // formatting only, App just needs the raw total for its own logic
+  const days = Math.floor(totalMinutes / 1440)
+  const remainingAfterDays = totalMinutes % 1440
+  const hours = Math.floor(remainingAfterDays / 60)
+  const minutes = remainingAfterDays % 60
+  return {days, hours, minutes}
 }
 
 function SearchInput({searchValue, onSearchChange}){
@@ -141,8 +150,8 @@ function App() {
     setMatchingShow([])
   }
 
-  seasonsData.length > 0 && console.log(getTotalRuntimeMinutes(seasonsData))
-  // seasonsData.length > 0 && getTotalRuntimeMinutes(seasonsData)
+  const totalMinutes = getTotalRuntimeMinutes(seasonsData)
+  const {days, hours, minutes} = formatWatchTime(totalMinutes)
 
   return (
     <>
@@ -151,7 +160,7 @@ function App() {
       <p>{searchInput}</p>
       <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
       {selectedShow && <p>Selected: {selectedShow.name}</p>}
-      {seasonsData.length > 0 && <p>{getTotalRuntimeMinutes(seasonsData)}</p>}
+      {seasonsData.length > 0 && <p>{days} day(s) {hours} hour(s) {minutes} minute(s)</p>}
     </>
   )
 }
