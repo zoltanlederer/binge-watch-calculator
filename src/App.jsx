@@ -62,12 +62,27 @@ function ShowListItem({show, onSelectedShow}){
   )
 }
 
+function SeasonSelect({numberOfSeasons, value, onChange}){
+  // Generates one <option> per season number; onChange belongs on
+  // <select> itself, not on individual <option> elements
+  const options = []
+  for (let i = 1; i <= numberOfSeasons; i++) {
+    options.push(<option key={i} value={i}>{`Season ${i}`}</option>)
+  }
+  return (
+    <select value={value} onChange={onChange}>
+      {options}
+    </select>
+  )
+}
+
 function App() {
   const [searchInput, setSearchInput] = useState('')
   const [matchingShow, setMatchingShow] = useState([])
   const [selectedShow, setSelectedShow] = useState(null)
   const [showDetails, setShowDetails] = useState(null)
   const [seasonsData, setSeasonsData] = useState([])
+  const [seasonsRange, setSeasonsRange] = useState({fromSeason: 1, toSeason: 1})
 
   const tmdbBaseUrl = 'https://api.themoviedb.org/3'
   const fetchHeader = {
@@ -109,6 +124,9 @@ function App() {
     .then(response => response.json())
     .then(data => {
       setShowDetails(data)
+      // Resets the range to the full show whenever a new show is selected,
+      // rather than merging with the previous show's leftover range
+      setSeasonsRange({fromSeason: 1, toSeason: data.number_of_seasons})
 
       const fetches = []
       for(let i = 1; i <= data.number_of_seasons; i++){
@@ -150,6 +168,14 @@ function App() {
     setMatchingShow([])
   }
 
+  const handleFromSeason = (e) => {
+    setSeasonsRange({...seasonsRange, fromSeason: e.target.value})
+  }
+
+  const handleToSeason = (e) => {
+    setSeasonsRange({...seasonsRange, toSeason: e.target.value})
+  }
+
   const totalMinutes = getTotalRuntimeMinutes(seasonsData)
   const {days, hours, minutes} = formatWatchTime(totalMinutes)
 
@@ -161,6 +187,22 @@ function App() {
       <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
       {selectedShow && <p>Selected: {selectedShow.name}</p>}
       {seasonsData.length > 0 && <p>{days} day(s) {hours} hour(s) {minutes} minute(s)</p>}
+      {showDetails && (
+        <>
+          <SeasonSelect
+            numberOfSeasons={showDetails && showDetails.number_of_seasons}
+            value={seasonsRange.fromSeason}
+            onChange={handleFromSeason} 
+          />
+          <SeasonSelect
+            numberOfSeasons={showDetails && showDetails.number_of_seasons}
+            value={seasonsRange.toSeason}
+            onChange={handleToSeason} 
+          />
+        </>
+      )}
+
+      
     </>
   )
 }
