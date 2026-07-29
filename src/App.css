@@ -50,6 +50,13 @@ body {
   text-align: center;
   margin: 0 0 28px;
   letter-spacing: -0.01em;
+  cursor: pointer; /* signals the title is clickable, resets to the main page */
+}
+
+/* New: wraps the search input and results dropdown so the dropdown
+   can be positioned relative to this box, not the whole page */
+.search-wrap {
+  position: relative;
 }
 
 /* Search input */
@@ -73,14 +80,27 @@ body {
   border-color: rgba(79,216,204,0.5);
 }
 
-/* Search results list */
+/* Search results list — floats over the page as a dropdown.
+   The list itself is a solid opaque panel so nothing behind it
+   bleeds through in the gaps between individual result rows. */
 .results-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
   list-style: none;
-  margin: 14px 0 0;
-  padding: 0;
+  margin: 0;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
 }
 .result-item {
   display: flex;
@@ -88,8 +108,6 @@ body {
   justify-content: space-between;
   gap: 12px;
   background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
   padding: 8px 20px;
@@ -146,7 +164,7 @@ body {
   font-family: 'Manrope', sans-serif;
   font-weight: 800;
   font-size: 30px;
-  margin: 0 0 16px;
+  margin: 16px 0 16px;
   letter-spacing: -0.01em;
   text-align: center;
   text-shadow: 0 2px 12px rgba(0,0,0,0.7);

@@ -59,6 +59,7 @@ function SearchInput({searchValue, onSearchChange}){
 }
 
 function ShowList({shows, onSelectedShow}){
+  if (!shows || shows.length === 0) return null
   return (
     <ul className="results-list">
       {shows && shows.slice(0, 6).map(show => {
@@ -384,12 +385,13 @@ function App() {
       <div className="app">
         <h1 className="app-title">Bingemeter</h1>
 
-        <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
+        <div className="search-wrap">
+          <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
+          <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
+        </div>
 
         {isSearching && <LoadingCard text="Searching…" />}
         {loadError && <ErrorCard text={loadError} />}
-
-        <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
 
         {isLoadingDetails && <LoadingCard text="Loading show details…" />}
 
