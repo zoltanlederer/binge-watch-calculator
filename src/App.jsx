@@ -120,6 +120,8 @@ function App() {
   const [showDetails, setShowDetails] = useState(null)
   const [seasonsData, setSeasonsData] = useState([])
   const [seasonsRange, setSeasonsRange] = useState({fromSeason: 1, toSeason: 1})
+  const [isSearching, setIsSearching] = useState(false)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   const tmdbBaseUrl = 'https://api.themoviedb.org/3'
   const fetchHeader = {
@@ -135,8 +137,11 @@ function App() {
     // so they don't linger on screen if the search box is cleared
     if (searchInput.length < 2 ){
       setMatchingShow([])
+      setIsSearching(false)
       return
     }
+    
+    setIsSearching(true)
     
     // Waits 500ms after the last change to searchInput before fetching,
     // so a fetch only fires once typing pauses, not on every keystroke
@@ -145,6 +150,7 @@ function App() {
         .then(response => response.json())
         .then(data => {
           setMatchingShow(data.results)
+          setIsSearching(false)
         })
     }, 500)
 
@@ -157,6 +163,9 @@ function App() {
 
   useEffect(() => {
     if (!selectedShow) { return }
+    // Tracks the loading state across the whole chain: show details,
+    // then all season fetches — only clears once seasonsData is ready
+    setIsLoadingDetails(true)
     fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}`, fetchHeader)
     .then(response => response.json())
     .then(data => {
@@ -192,6 +201,7 @@ function App() {
             }
           })
         setSeasonsData(allData)
+        setIsLoadingDetails(false)
       })
     })
   }, [selectedShow])
@@ -219,9 +229,11 @@ function App() {
       <h1>Binge-watch calculator</h1>
       <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
       <p>{searchInput}</p>
+      {isSearching && <span className='spinner'></span>}
       <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
       {selectedShow && <p>Selected: {selectedShow.name}</p>}
 
+      {isLoadingDetails && <span className='spinner'></span>}
       {showDetails && seasonsData.length > 0 && (
         <ShowDetail 
           showDetails={showDetails}
