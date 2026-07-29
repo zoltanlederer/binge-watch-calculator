@@ -127,7 +127,7 @@ function App() {
       // Resets the range to the full show whenever a new show is selected,
       // rather than merging with the previous show's leftover range
       setSeasonsRange({fromSeason: 1, toSeason: data.number_of_seasons})
-
+      
       const fetches = []
       for(let i = 1; i <= data.number_of_seasons; i++){
         fetches.push(fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}/season/${i}`, fetchHeader))
@@ -146,6 +146,7 @@ function App() {
         const allData = data.map(item => {
             return {
               name: item.name,
+              season_number: item.episodes[0].season_number,  // pulled up to the top level, once
               episodes: item.episodes.map(episode => ({
                 season_number: episode.season_number,
                 episode_number: episode.episode_number,
@@ -169,14 +170,19 @@ function App() {
   }
 
   const handleFromSeason = (e) => {
-    setSeasonsRange({...seasonsRange, fromSeason: e.target.value})
+    setSeasonsRange({...seasonsRange, fromSeason: Number(e.target.value)})
   }
 
   const handleToSeason = (e) => {
-    setSeasonsRange({...seasonsRange, toSeason: e.target.value})
+    setSeasonsRange({...seasonsRange, toSeason: Number(e.target.value)})
   }
 
-  const totalMinutes = getTotalRuntimeMinutes(seasonsData)
+  // Narrows seasonsData down to the selected from/to range before summing,
+  // so the total reflects only the seasons the person wants to watch
+  const filteredSeason = seasonsData.filter(season => {
+    return season.season_number >= seasonsRange.fromSeason && season.season_number <= seasonsRange.toSeason
+  })
+  const totalMinutes = getTotalRuntimeMinutes(filteredSeason)
   const {days, hours, minutes} = formatWatchTime(totalMinutes)
 
   return (
