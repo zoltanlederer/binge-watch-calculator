@@ -122,6 +122,7 @@ function App() {
   const [seasonsRange, setSeasonsRange] = useState({fromSeason: 1, toSeason: 1})
   const [isSearching, setIsSearching] = useState(false)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [loadError, setLoadError] = useState(null)
 
   const tmdbBaseUrl = 'https://api.themoviedb.org/3'
   const fetchHeader = {
@@ -133,6 +134,7 @@ function App() {
      
   // Refetches automatically whenever searchInput changes
   useEffect(() => {
+    setLoadError(null)
     // Skip fetching for very short input, and clear old results
     // so they don't linger on screen if the search box is cleared
     if (searchInput.length < 2 ){
@@ -147,11 +149,24 @@ function App() {
     // Waits 500ms after the last change to searchInput before fetching,
     // so a fetch only fires once typing pauses, not on every keystroke
     const timeoutId = setTimeout(() => {
+      // A fetch only rejects on true network failure — a 401/404/500 still
+      // resolves successfully, so status must be checked explicitly here
       fetch(`${tmdbBaseUrl}/search/tv?query=${searchInput}`, {...fetchHeader, signal: controller.signal})
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok){
+            throw new Error(`Search fetch failed: ${response.status}`)
+          }
+          return response.json()
+        })
         .then(data => {
           setMatchingShow(data.results)
           setIsSearching(false)
+        })
+        // Catches both a bad response status (thrown above) and genuine
+        // network failures (fetch itself rejecting)
+        .catch(() => {
+          setIsSearching(false)
+          setLoadError('Something went wrong during search. Please try again.')
         })
     }, 500)
 
@@ -166,13 +181,20 @@ function App() {
   }, [searchInput])
 
   useEffect(() => {
+    setLoadError(null)
     if (!selectedShow) { return }
     const controller = new AbortController()  
     // Tracks the loading state across the whole chain: show details,
     // then all season fetches — only clears once seasonsData is ready
     setIsLoadingDetails(true)
     fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}`, {...fetchHeader, signal: controller.signal})
-    .then(response => response.json())
+    .then(response => {
+      // Same reasoning as the search fetch — status must be checked explicitly
+      if (!response.ok) {
+        throw new Error(`Show fetch failed: ${response.status}`)
+      }
+      return response.json()
+    })
     .then(data => {
       setShowDetails(data)
       // Resets the range to the full show whenever a new show is selected,
@@ -189,7 +211,16 @@ function App() {
       // requests to finish before parsing their responses as JSON
       Promise.all(fetches)
       .then(response => {
-        return Promise.all(response.map(response => response.json()))
+        return Promise.all(response.map(response => {
+          // If any single season request failed, throwing here rejects the whole
+          // Promise.all, so one bad season fails the entire load rather than
+          // silently producing incomplete watch-time data
+          if (!response.ok) {
+            throw new Error(`Season fetch failed: ${response.status}`)
+          }
+          return response.json()
+          })
+        )
       })
       .then(data => {
         // Reshapes TMDB's season/episode data down to just the fields
@@ -208,6 +239,16 @@ function App() {
         setSeasonsData(allData)
         setIsLoadingDetails(false)
       })
+      .catch(() => {
+        setIsLoadingDetails(false)
+        setLoadError("Couldn't search right now. Try again in a moment.")
+      })
+    })
+    .catch(() => {
+      // Catches detail-fetch failures specifically; season failures are
+      // already caught by the .catch() above and never reach this one
+      setIsLoadingDetails(false)
+      setLoadError("Couldn't load this show. Try again in a moment.")
     })
 
     return () => {
@@ -237,12 +278,12 @@ function App() {
     <>
       <h1>Binge-watch calculator</h1>
       <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
-      <p>{searchInput}</p>
-      {isSearching && <span className='spinner'></span>}
-      <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
-      {selectedShow && <p>Selected: {selectedShow.name}</p>}
+      
+      {/* <p>{searchInput}</p>
+      {selectedShow && <p>Selected: {selectedShow.name}</p>} */}
 
-      {isLoadingDetails && <span className='spinner'></span>}
+      <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
+      
       {showDetails && seasonsData.length > 0 && (
         <ShowDetail 
           showDetails={showDetails}
@@ -253,6 +294,9 @@ function App() {
         />
       )}
       
+      {isSearching && <span className='spinner'></span>}
+      {isLoadingDetails && <span className='spinner'></span>}
+      {loadError && <p>{loadError}</p>}
     </>
   )
 }
