@@ -356,6 +356,7 @@ function App() {
   const handleSelectedShow = (show) => {
     setSelectedShow(show)
     setMatchingShow([])
+    setSearchInput('')
   }
 
   const handleFromSeason = (e) => {
@@ -375,7 +376,7 @@ function App() {
       )}
 
       <div className="app">
-        <h1 className="app-title">Binge-watch calculator</h1>
+        <h1 className="app-title">Bingemeter</h1>
 
         <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
 
