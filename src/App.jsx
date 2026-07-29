@@ -22,7 +22,8 @@ function getTotalRuntimeMinutes(seasonsData){
 
 function formatWatchTime(totalMinutes){
   // converts raw minutes into days/hours/minutes for display —
-  // formatting only, App just needs the raw total for its own logic
+  // ShowDetail uses this for the "total runtime" pill, separate
+  // from getDaysToFinish's personalized pace-based estimate
   const days = Math.floor(totalMinutes / 1440)
   const remainingAfterDays = totalMinutes % 1440
   const hours = Math.floor(remainingAfterDays / 60)
@@ -48,7 +49,9 @@ function getDaysToFinish(totalMinutes, hoursPerDay) {
 function SearchInput({searchValue, onSearchChange}){
   return (
     <input
+      className="search-input"
       type='text'
+      placeholder="Search for a tv show"
       value={searchValue}
       onChange={onSearchChange}
     />
@@ -57,21 +60,28 @@ function SearchInput({searchValue, onSearchChange}){
 
 function ShowList({shows, onSelectedShow}){
   return (
-    <ul>
+    <ul className="results-list">
       {shows && shows.slice(0, 6).map(show => {
         return (
           <ShowListItem key={show.id} show={show} onSelectedShow={onSelectedShow} />
         )
       })}
     </ul>
-    )
+  )
 }
 
 function ShowListItem({show, onSelectedShow}){
+  const year = show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''
   return (
-    <li onClick={() => onSelectedShow(show)}>
-      <img src={getPosterUrl(show.poster_path)} alt={`${show.name} poster`} />
-      {show.name}
+    <li className="result-item" onClick={() => onSelectedShow(show)}>
+      <div className="result-main">
+        <img className="result-poster" src={getPosterUrl(show.poster_path)} alt={`${show.name} poster`} />
+        <div className="result-text">
+          <p className="result-title">{show.name}</p>
+          <p className="result-year">{year}</p>
+        </div>
+      </div>
+      <span className="result-chevron">&#8250;</span>
     </li>
   )
 }
@@ -87,6 +97,24 @@ function SeasonSelect({numberOfSeasons, value, onChange}){
     <select value={value} onChange={onChange}>
       {options}
     </select>
+  )
+}
+
+function LoadingCard({text}){
+  return (
+    <div className="loading-card">
+      <span className="spinner"></span>
+      <p className="loading-text">{text}</p>
+    </div>
+  )
+}
+
+function ErrorCard({text}){
+  return (
+    <div className="error-card">
+      <span className="error-icon">!</span>
+      <p className="error-text">{text}</p>
+    </div>
   )
 }
 
@@ -107,34 +135,72 @@ function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason,
     setHoursPerDay(Number(e.target.value))
   }
 
+  const year = showDetails.first_air_date ? new Date(showDetails.first_air_date).getFullYear() : ''
+
   return (
     <>
-    <p>
-      <a href={`https://www.themoviedb.org/tv/${showDetails.id}`} target="_blank" rel="noopener noreferrer">
-        <img src={getPosterUrl(showDetails.poster_path)} alt={`${showDetails.name} poster`} />
-      </a>
-    </p>
-    <p><img src={getPosterUrl(showDetails.backdrop_path, 'w1280')} alt={`${showDetails.name} backdrop poster`} /></p>
-    <p>Total watch time: {days}d {hours}h {minutes}m</p>
-    <p>{showDetails.name}</p>
-    <p>{showDetails.overview}</p>
-    <p>{showDetails.vote_average.toFixed(1)}</p>
-    <p>{new Date(showDetails.first_air_date).getFullYear()}</p>
-    <p>{showDetails.number_of_seasons}</p>
-    <p>{showDetails.number_of_episodes}</p>
-    <SeasonSelect
-      numberOfSeasons={showDetails.number_of_seasons}
-      value={seasonsRange.fromSeason}
-      onChange={onHandleFromSeason} 
-    />
-    <SeasonSelect
-      numberOfSeasons={showDetails.number_of_seasons}
-      value={seasonsRange.toSeason}
-      onChange={onHandleToSeason} 
-    />
-    <input type="range" min="0.5" max="24" step="0.5" value={hoursPerDay} onChange={handleHoursPerDay} />
-    <p>{hoursPerDay} hour(s) a day</p>
-    <p>Finish in {fullDays} day(s), {remainingHours} hour(s) {remainingMinutes} minute(s)</p>
+      <div className="hero-top">
+        <p className="show-title">{showDetails.name}</p>
+        <div className="hero-row">
+          <div className="poster-wrap">
+            <a href={`https://www.themoviedb.org/tv/${showDetails.id}`} target="_blank" rel="noopener noreferrer">
+              <img className="poster-large" src={getPosterUrl(showDetails.poster_path)} alt={`${showDetails.name} poster`} />
+            </a>
+            <div className="poster-badges">
+              <span className="badge rating">&#9733; {showDetails.vote_average.toFixed(1)}</span>
+              <span className="badge year">{year}</span>
+            </div>
+          </div>
+          <div className="glass-card hero-row-overview">
+            <div className="hero-row-overview-inner">
+              <p className="overview">{showDetails.overview}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card">
+        <p className="section-label">Seasons to watch</p>
+        <div className="season-selects">
+          <SeasonSelect
+            numberOfSeasons={showDetails.number_of_seasons}
+            value={seasonsRange.fromSeason}
+            onChange={onHandleFromSeason}
+          />
+          <span>to</span>
+          <SeasonSelect
+            numberOfSeasons={showDetails.number_of_seasons}
+            value={seasonsRange.toSeason}
+            onChange={onHandleToSeason}
+          />
+        </div>
+      </div>
+
+      <div className="glass-card">
+        <div className="hero-number">
+          <span className="hero-digits">{fullDays}<span className="hero-unit">d</span>{remainingHours}<span className="hero-unit">h</span>{remainingMinutes}<span className="hero-unit">m</span></span>
+          <p className="hero-caption">at your pace &middot; {hoursPerDay} hours a day</p>
+        </div>
+        <div className="slider-row">
+          <label>Hours a day</label>
+          <input type="range" min="0.5" max="24" step="0.5" value={hoursPerDay} onChange={handleHoursPerDay} />
+          <span className="hours-out">{hoursPerDay}h</span>
+        </div>
+        <div className="pill-row">
+          <div className="pill">
+            <div className="pill-value">{showDetails.number_of_seasons}</div>
+            <div className="pill-label">seasons</div>
+          </div>
+          <div className="pill">
+            <div className="pill-value">{showDetails.number_of_episodes}</div>
+            <div className="pill-label">episodes</div>
+          </div>
+          <div className="pill">
+            <div className="pill-value">{days}d {hours}h {minutes}m</div>
+            <div className="pill-label">total runtime</div>
+          </div>
+        </div>
+      </div>
     </>
   )
 }
@@ -157,7 +223,7 @@ function App() {
       accept: "application/json"
     }
   }
-     
+
   // Refetches automatically whenever searchInput changes
   useEffect(() => {
     setLoadError(null)
@@ -169,9 +235,9 @@ function App() {
       return
     }
 
-    const controller = new AbortController()  
+    const controller = new AbortController()
     setIsSearching(true)
-    
+
     // Waits 500ms after the last change to searchInput before fetching,
     // so a fetch only fires once typing pauses, not on every keystroke
     const timeoutId = setTimeout(() => {
@@ -192,7 +258,7 @@ function App() {
         // network failures (fetch itself rejecting)
         .catch(() => {
           setIsSearching(false)
-          setLoadError('Something went wrong during search. Please try again.')
+          setLoadError("Couldn't search right now. Try again in a moment.")
         })
     }, 500)
 
@@ -209,7 +275,7 @@ function App() {
   useEffect(() => {
     setLoadError(null)
     if (!selectedShow) { return }
-    const controller = new AbortController()  
+    const controller = new AbortController()
     // Tracks the loading state across the whole chain: show details,
     // then all season fetches — only clears once seasonsData is ready
     setIsLoadingDetails(true)
@@ -226,7 +292,7 @@ function App() {
       // Resets the range to the full show whenever a new show is selected,
       // rather than merging with the previous show's leftover range
       setSeasonsRange({fromSeason: 1, toSeason: data.number_of_seasons})
-      
+
       const fetches = []
       for(let i = 1; i <= data.number_of_seasons; i++){
         fetches.push(fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}/season/${i}`, {...fetchHeader, signal: controller.signal}))
@@ -254,7 +320,7 @@ function App() {
         const allData = data.map(item => {
             return {
               name: item.name,
-              season_number: item.episodes[0].season_number,  // pulled up to the top level, once
+              season_number: item.episodes[0].season_number, // pulled up to the top level, once
               episodes: item.episodes.map(episode => ({
                 season_number: episode.season_number,
                 episode_number: episode.episode_number,
@@ -302,27 +368,34 @@ function App() {
 
   return (
     <>
-      <h1>Binge-watch calculator</h1>
-      <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
-      
-      {/* <p>{searchInput}</p>
-      {selectedShow && <p>Selected: {selectedShow.name}</p>} */}
-
-      <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
-      
-      {showDetails && seasonsData.length > 0 && (
-        <ShowDetail 
-          showDetails={showDetails}
-          seasonsData={seasonsData} 
-          seasonsRange={seasonsRange}
-          onHandleToSeason={handleToSeason}
-          onHandleFromSeason={handleFromSeason}
-        />
+      {showDetails && (
+        <div className="page-backdrop">
+          <img src={getPosterUrl(showDetails.backdrop_path, 'w1280')} alt="" />
+        </div>
       )}
-      
-      {isSearching && <span className='spinner'></span>}
-      {isLoadingDetails && <span className='spinner'></span>}
-      {loadError && <p>{loadError}</p>}
+
+      <div className="app">
+        <h1 className="app-title">Binge-watch calculator</h1>
+
+        <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
+
+        {isSearching && <LoadingCard text="Searching…" />}
+        {loadError && <ErrorCard text={loadError} />}
+
+        <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
+
+        {isLoadingDetails && <LoadingCard text="Loading show details…" />}
+
+        {showDetails && seasonsData.length > 0 && (
+          <ShowDetail
+            showDetails={showDetails}
+            seasonsData={seasonsData}
+            seasonsRange={seasonsRange}
+            onHandleToSeason={handleToSeason}
+            onHandleFromSeason={handleFromSeason}
+          />
+        )}
+      </div>
     </>
   )
 }
