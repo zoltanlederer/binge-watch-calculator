@@ -374,6 +374,18 @@ function App() {
     setSeasonsRange({...seasonsRange, toSeason: Number(e.target.value)})
   }
 
+  const handleReset = () => {
+    setSearchInput('')
+    setMatchingShow([])
+    setSelectedShow(null)
+    setShowDetails(null)
+    setSeasonsData([])
+    setSeasonsRange({fromSeason: 1, toSeason: 1})
+    setIsSearching(false)
+    setIsLoadingDetails(false)
+    setLoadError(null)
+  }
+
   return (
     <>
       {showDetails && (
@@ -383,7 +395,7 @@ function App() {
       )}
 
       <div className="app">
-        <h1 className="app-title">Bingemeter</h1>
+        <h1 className="app-title" onClick={handleReset}>Bingemeter</h1>
 
         <div className="search-wrap">
           <SearchInput searchValue={searchInput} onSearchChange={handleSearchChange} />
