@@ -30,6 +30,21 @@ function formatWatchTime(totalMinutes){
   return {days, hours, minutes}
 }
 
+// Given the total watch time and a chosen pace (hours/day), works out how
+// many full days that pace takes, plus the leftover hours needed on the
+// final day — rather than assuming a 24-hour day like formatWatchTime does
+function getDaysToFinish(totalMinutes, hoursPerDay) {
+  const totalHours = totalMinutes / 60
+  // Whole days completed at this pace
+  const fullDays = Math.floor(totalHours / hoursPerDay)
+  // Whatever's left over doesn't fill a full day at this pace,
+  // so it's shown separately as partial hours on the last day
+  const remainingHours = totalHours - (fullDays * hoursPerDay)
+  const hours = Math.floor(remainingHours)
+  const minutes = Math.round((remainingHours - hours) * 60)
+  return {fullDays, hours, minutes}
+}
+
 function SearchInput({searchValue, onSearchChange}){
   return (
     <input
@@ -76,6 +91,9 @@ function SeasonSelect({numberOfSeasons, value, onChange}){
 }
 
 function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason, onHandleToSeason}){
+  // Lets the person set their own daily pace to see a personalized
+  // "finish by" estimate, separate from the show's fixed total runtime
+  const [hoursPerDay, setHoursPerDay] = useState(2)
   // Narrows seasonsData down to the selected from/to range before summing,
   // so the total reflects only the seasons the person wants to watch
   const filteredSeason = seasonsData.filter(season => {
@@ -83,6 +101,11 @@ function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason,
   })
   const totalMinutes = getTotalRuntimeMinutes(filteredSeason)
   const {days, hours, minutes} = formatWatchTime(totalMinutes)
+  const { fullDays, hours: remainingHours, minutes: remainingMinutes } = getDaysToFinish(totalMinutes, hoursPerDay)
+
+  const handleHoursPerDay = (e) => {
+    setHoursPerDay(Number(e.target.value))
+  }
 
   return (
     <>
@@ -92,7 +115,7 @@ function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason,
       </a>
     </p>
     <p><img src={getPosterUrl(showDetails.backdrop_path, 'w1280')} alt={`${showDetails.name} backdrop poster`} /></p>
-    <p>{days} day(s) {hours} hour(s) {minutes} minute(s)</p>
+    <p>Total watch time: {days}d {hours}h {minutes}m</p>
     <p>{showDetails.name}</p>
     <p>{showDetails.overview}</p>
     <p>{showDetails.vote_average.toFixed(1)}</p>
@@ -109,6 +132,9 @@ function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason,
       value={seasonsRange.toSeason}
       onChange={onHandleToSeason} 
     />
+    <input type="range" min="0.5" max="24" step="0.5" value={hoursPerDay} onChange={handleHoursPerDay} />
+    <p>{hoursPerDay} hour(s) a day</p>
+    <p>Finish in {fullDays} day(s), {remainingHours} hour(s) {remainingMinutes} minute(s)</p>
     </>
   )
 }
@@ -241,7 +267,7 @@ function App() {
       })
       .catch(() => {
         setIsLoadingDetails(false)
-        setLoadError("Couldn't search right now. Try again in a moment.")
+        setLoadError("Couldn't load this show. Try again in a moment.")
       })
     })
     .catch(() => {
