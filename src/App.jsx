@@ -125,12 +125,12 @@ function App() {
 
   const tmdbBaseUrl = 'https://api.themoviedb.org/3'
   const fetchHeader = {
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_TMDB_API_TOKEN}`,
-        accept: "application/json"
-      }
+    headers: {
+      Authorization: `Bearer ${import.meta.env.VITE_TMDB_API_TOKEN}`,
+      accept: "application/json"
     }
-
+  }
+     
   // Refetches automatically whenever searchInput changes
   useEffect(() => {
     // Skip fetching for very short input, and clear old results
@@ -140,13 +140,14 @@ function App() {
       setIsSearching(false)
       return
     }
-    
+
+    const controller = new AbortController()  
     setIsSearching(true)
     
     // Waits 500ms after the last change to searchInput before fetching,
     // so a fetch only fires once typing pauses, not on every keystroke
     const timeoutId = setTimeout(() => {
-      fetch(`${tmdbBaseUrl}/search/tv?query=${searchInput}`, fetchHeader)
+      fetch(`${tmdbBaseUrl}/search/tv?query=${searchInput}`, {...fetchHeader, signal: controller.signal})
         .then(response => response.json())
         .then(data => {
           setMatchingShow(data.results)
@@ -155,18 +156,22 @@ function App() {
     }, 500)
 
     // Cancels the scheduled fetch above if searchInput changes again
-    // before the 500ms is up (runs before the effect re-runs, and on unmount)
+    // before the 500ms is up (runs before the effect re-runs, and on unmount).
+    // Also aborts the fetch if it already fired, covering both points where
+    // a stale search could otherwise resolve late and overwrite fresh results.
     return () => {
       clearTimeout(timeoutId)
+      controller.abort()
     }
   }, [searchInput])
 
   useEffect(() => {
     if (!selectedShow) { return }
+    const controller = new AbortController()  
     // Tracks the loading state across the whole chain: show details,
     // then all season fetches — only clears once seasonsData is ready
     setIsLoadingDetails(true)
-    fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}`, fetchHeader)
+    fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}`, {...fetchHeader, signal: controller.signal})
     .then(response => response.json())
     .then(data => {
       setShowDetails(data)
@@ -176,7 +181,7 @@ function App() {
       
       const fetches = []
       for(let i = 1; i <= data.number_of_seasons; i++){
-        fetches.push(fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}/season/${i}`, fetchHeader))
+        fetches.push(fetch(`${tmdbBaseUrl}/tv/${selectedShow.id}/season/${i}`, {...fetchHeader, signal: controller.signal}))
       }
 
       // Fetches every season individually (TMDB doesn't return per-episode
@@ -204,6 +209,10 @@ function App() {
         setIsLoadingDetails(false)
       })
     })
+
+    return () => {
+      controller.abort()
+    }
   }, [selectedShow])
 
   // Keeps React state as the single source of truth for the input (controlled component)
