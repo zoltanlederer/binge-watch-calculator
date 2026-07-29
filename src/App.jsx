@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import './App.css'
 
 // A plain function, not a component — pure, reusable, no state involved
-function getPosterUrl(posterPath){
+function getPosterUrl(posterPath, posterSize = 'w185'){
   const posterBaseUrl = 'https://image.tmdb.org/t/p/'
-  const posterSize = 'w185'
   return posterPath
     ? `${posterBaseUrl}${posterSize}${posterPath}`
     : '/images/poster-placeholder.png'
@@ -73,6 +72,44 @@ function SeasonSelect({numberOfSeasons, value, onChange}){
     <select value={value} onChange={onChange}>
       {options}
     </select>
+  )
+}
+
+function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason, onHandleToSeason}){
+  // Narrows seasonsData down to the selected from/to range before summing,
+  // so the total reflects only the seasons the person wants to watch
+  const filteredSeason = seasonsData.filter(season => {
+    return season.season_number >= seasonsRange.fromSeason && season.season_number <= seasonsRange.toSeason
+  })
+  const totalMinutes = getTotalRuntimeMinutes(filteredSeason)
+  const {days, hours, minutes} = formatWatchTime(totalMinutes)
+
+  return (
+    <>
+    <p>
+      <a href={`https://www.themoviedb.org/tv/${showDetails.id}`} target="_blank" rel="noopener noreferrer">
+        <img src={getPosterUrl(showDetails.poster_path)} alt={`${showDetails.name} poster`} />
+      </a>
+    </p>
+    <p><img src={getPosterUrl(showDetails.backdrop_path, 'w1280')} alt={`${showDetails.name} backdrop poster`} /></p>
+    <p>{days} day(s) {hours} hour(s) {minutes} minute(s)</p>
+    <p>{showDetails.name}</p>
+    <p>{showDetails.overview}</p>
+    <p>{showDetails.vote_average.toFixed(1)}</p>
+    <p>{new Date(showDetails.first_air_date).getFullYear()}</p>
+    <p>{showDetails.number_of_seasons}</p>
+    <p>{showDetails.number_of_episodes}</p>
+    <SeasonSelect
+      numberOfSeasons={showDetails.number_of_seasons}
+      value={seasonsRange.fromSeason}
+      onChange={onHandleFromSeason} 
+    />
+    <SeasonSelect
+      numberOfSeasons={showDetails.number_of_seasons}
+      value={seasonsRange.toSeason}
+      onChange={onHandleToSeason} 
+    />
+    </>
   )
 }
 
@@ -177,14 +214,6 @@ function App() {
     setSeasonsRange({...seasonsRange, toSeason: Number(e.target.value)})
   }
 
-  // Narrows seasonsData down to the selected from/to range before summing,
-  // so the total reflects only the seasons the person wants to watch
-  const filteredSeason = seasonsData.filter(season => {
-    return season.season_number >= seasonsRange.fromSeason && season.season_number <= seasonsRange.toSeason
-  })
-  const totalMinutes = getTotalRuntimeMinutes(filteredSeason)
-  const {days, hours, minutes} = formatWatchTime(totalMinutes)
-
   return (
     <>
       <h1>Binge-watch calculator</h1>
@@ -192,22 +221,16 @@ function App() {
       <p>{searchInput}</p>
       <ShowList shows={matchingShow} onSelectedShow={handleSelectedShow} />
       {selectedShow && <p>Selected: {selectedShow.name}</p>}
-      {seasonsData.length > 0 && <p>{days} day(s) {hours} hour(s) {minutes} minute(s)</p>}
-      {showDetails && (
-        <>
-          <SeasonSelect
-            numberOfSeasons={showDetails && showDetails.number_of_seasons}
-            value={seasonsRange.fromSeason}
-            onChange={handleFromSeason} 
-          />
-          <SeasonSelect
-            numberOfSeasons={showDetails && showDetails.number_of_seasons}
-            value={seasonsRange.toSeason}
-            onChange={handleToSeason} 
-          />
-        </>
-      )}
 
+      {showDetails && seasonsData.length > 0 && (
+        <ShowDetail 
+          showDetails={showDetails}
+          seasonsData={seasonsData} 
+          seasonsRange={seasonsRange}
+          onHandleToSeason={handleToSeason}
+          onHandleFromSeason={handleFromSeason}
+        />
+      )}
       
     </>
   )
