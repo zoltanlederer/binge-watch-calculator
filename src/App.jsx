@@ -127,6 +127,12 @@ function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason,
   const filteredSeason = seasonsData.filter(season => {
     return season.season_number >= seasonsRange.fromSeason && season.season_number <= seasonsRange.toSeason
   })
+  // Counts episodes only within the filtered range, matching the
+  // season count and runtime pills so all three stay consistent
+  // with whatever range the person has selected
+  const filteredEpisodeCount = filteredSeason.reduce((count, season) => {
+    return count + season.episodes.length
+  }, 0)
   const totalMinutes = getTotalRuntimeMinutes(filteredSeason)
   const {days, hours, minutes} = formatWatchTime(totalMinutes)
   const { fullDays, hours: remainingHours, minutes: remainingMinutes } = getDaysToFinish(totalMinutes, hoursPerDay)
@@ -188,11 +194,11 @@ function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason,
         </div>
         <div className="pill-row">
           <div className="pill">
-            <div className="pill-value">{showDetails.number_of_seasons}</div>
+            <div className="pill-value">{filteredSeason.length}</div>
             <div className="pill-label">seasons</div>
           </div>
           <div className="pill">
-            <div className="pill-value">{showDetails.number_of_episodes}</div>
+            <div className="pill-value">{filteredEpisodeCount}</div>
             <div className="pill-label">episodes</div>
           </div>
           <div className="pill">
