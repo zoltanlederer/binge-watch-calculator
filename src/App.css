@@ -227,6 +227,33 @@ body {
   }
 }
 
+/* Trending posters */
+.trending-list {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+.trending-item {
+  cursor: pointer;
+  align-self: center;
+}
+.trending-poster {
+  width: 115px;
+  height: 170px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+  transition: transform 0.15s ease;
+}
+.trending-item:hover .trending-poster {
+  transform: scale(1.03);
+}
+
 /* Glass card, the base container reused everywhere below */
 .glass-card {
   background: rgba(255,255,255,0.06);

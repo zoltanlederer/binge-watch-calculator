@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import './App.css'
 
 // A plain function, not a component — pure, reusable, no state involved
-function getPosterUrl(posterPath, posterSize = 'w185'){
+function getPosterUrl(posterPath, posterSize = 'w500'){
   const posterBaseUrl = 'https://image.tmdb.org/t/p/'
   return posterPath
     ? `${posterBaseUrl}${posterSize}${posterPath}`
@@ -212,6 +212,21 @@ function ShowDetail({showDetails, seasonsData, seasonsRange, onHandleFromSeason,
   )
 }
 
+function TrendingPosterList({trendingShows, onSelectedShow}){
+  if(!trendingShows || trendingShows.length === 0) return null
+  return (
+    <ul className="trending-list">
+      {trendingShows.map(show => {
+        return (
+          <li className="trending-item" key={show.id} onClick={() => onSelectedShow(show)}>
+            <img className="trending-poster" src={getPosterUrl(show.poster_path,)} alt={`${show.name} poster`} />
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function App() {
   const [searchInput, setSearchInput] = useState('')
   const [matchingShow, setMatchingShow] = useState([])
@@ -222,6 +237,7 @@ function App() {
   const [isSearching, setIsSearching] = useState(false)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [loadError, setLoadError] = useState(null)
+  const [trendingShows, setTrendingShows] = useState([])
 
   const tmdbBaseUrl = 'https://api.themoviedb.org/3'
   const fetchHeader = {
@@ -355,6 +371,23 @@ function App() {
     }
   }, [selectedShow])
 
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch(`${tmdbBaseUrl}/discover/tv?include_adult=false&include_null_first_air_dates=false&language=en-US&page=1&sort_by=popularity.desc&with_origin_country=US`, {...fetchHeader, signal: controller.signal})
+    .then(response => {
+      if (!response.ok){
+        throw new Error(`Trending TV shows fetch failed: ${response.status}`)
+      }
+      return response.json()
+    })
+    .then(data => {
+      setTrendingShows(data.results)
+    })
+    .catch(() => {
+      setLoadError("Unable to load trending TV shows. Try again in a moment.")
+    })
+  }, [])
+
   // Keeps React state as the single source of truth for the input (controlled component)
   const handleSearchChange = (e) => {
     setSearchInput(e.target.value)
@@ -408,6 +441,14 @@ function App() {
 
         {isLoadingDetails && <LoadingCard text="Loading show details…" />}
 
+        {!selectedShow &&
+          <TrendingPosterList trendingShows={trendingShows} onSelectedShow={handleSelectedShow} />
+        }
+
+        {/* {!selectedShow && (
+          <ShowList shows={trendingShows} onSelectedShow={handleSelectedShow} />
+        )} */}
+        
         {showDetails && seasonsData.length > 0 && (
           <ShowDetail
             showDetails={showDetails}
