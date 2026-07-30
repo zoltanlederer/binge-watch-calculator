@@ -462,3 +462,32 @@ body {
   color: rgba(238,241,242,0.85);
   margin: 0;
 }
+
+/* Footer */
+.app-footer {
+  text-align: center;
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.app-footer p {
+  font-size: 11px;
+  color: rgba(238,241,242,0.35);
+  margin: 0 0 10px;
+}
+.app-footer a {
+  font-size: 11px;
+  color: rgba(238,241,242,0.5);
+  text-decoration: none;
+}
+.app-footer a:hover {
+  color: #4FD8CC;
+}
+.app-footer-credit {
+  margin-top: 10px !important;
+}
+.tmdb-logo {
+  height: 10px;
+  width: auto;
+  opacity: 0.8;
+}

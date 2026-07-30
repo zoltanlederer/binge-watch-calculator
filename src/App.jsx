@@ -459,6 +459,16 @@ function App() {
           />
         )}
       </div>
+
+      <footer className="app-footer">
+        <p>This product uses the TMDb API but is not endorsed or certified by TMDb.</p>
+        <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">
+          <img className="tmdb-logo" src="/images/tmdb_logo.svg" alt="The Movie Database logo" />
+        </a>
+        <p className="app-footer-credit">
+          Built by <a href="https://zoltanlederer.com" target="_blank" rel="noopener noreferrer">zoltanlederer.com</a>
+        </p>
+      </footer>
     </>
   )
 }
