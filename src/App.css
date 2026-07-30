@@ -9,10 +9,10 @@ body {
     radial-gradient(circle at 20% 10%, #1A3A5C 0%, transparent 45%),
     radial-gradient(circle at 80% 80%, #0F4A47 0%, transparent 55%),
     #04060A;
+  background-attachment: fixed;
   color: #EEF1F2;
   font-family: 'Inter', sans-serif;
 }
-
 /* Full-page backdrop image, shown behind everything once a show is selected */
 .page-backdrop {
   position: fixed;
