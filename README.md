@@ -2,7 +2,7 @@
 
 Find out how long it'll take to binge-watch your next TV show — search for a show, pick which seasons you want to watch, set your own daily pace, and see a personalized estimate of how many days it'll take.
 
-**Live demo:** _coming soon_
+**Live demo:** [bingemeter.zoltanlederer.com](https://bingemeter.zoltanlederer.com/)
 
 ## Screenshots
 
