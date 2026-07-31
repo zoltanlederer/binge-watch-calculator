@@ -428,7 +428,7 @@ function App() {
       )}
 
       <div className="app">
-        <h1 className="app-title" onClick={handleReset}>Bingemeter</h1>
+        <h1 className="app-title" onClick={handleReset}>BingeMeter</h1>
         <p className="app-subtitle">Find out how long it'll take to binge your next show.</p>
 
         <div className="search-wrap">
