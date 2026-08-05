@@ -85,6 +85,10 @@ test('shows trending shows on the empty state', async () => {
     expect(poster).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w500/euKFiO5M125rpngFRBbSW83beeI.jpg')
 })
 
+// Confirms that typing a real show title into the search box surfaces
+// a matching result on screen. No fake timers used (see jest-setup.md
+// notes) — real time is allowed to pass, and findByText's built-in
+// retry/wait covers the 500ms debounce naturally.
 test('typing a search term shows matching results', async () => {
     // Trending fetch, fired on mount — matches nothing here since we
     // don't care about trending shows in this test
