@@ -50,3 +50,36 @@ test('renders the search input', async () => {
         expect(fetch).toHaveBeenCalled()
     })
 })
+
+// Confirms trending shows fetched on mount actually render as posters
+// on screen, with the correct image URL built from poster_path.
+// Uses real show data (The Big Bang Theory) so the expected URL is
+// something concrete and verifiable, not arbitrary.
+test('shows trending shows on the empty state', async () => {
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            results: [{
+                id: 1418,
+                name: 'The Big Bang Theory',
+                // TMDB's real API returns just the path, not the full URL —
+                // getPosterUrl is responsible for building the full URL
+                poster_path: '/euKFiO5M125rpngFRBbSW83beeI.jpg'
+            }]
+        })
+    })
+
+    render(<App />)
+
+    // findByRole (not getByRole) because the poster only appears AFTER
+    // the mocked fetch resolves — findBy returns a Promise and retries
+    // until the element appears, so no extra waitFor is needed here.
+    // Matches the FULL alt text ("{name} poster"), not just the name,
+    // since that's what TrendingPosterList actually renders.
+    const poster = await screen.findByRole('img', { name: 'The Big Bang Theory poster' })
+
+    // Hand-verified expected URL: posterBaseUrl + 'w500' + poster_path,
+    // matching getPosterUrl's own concatenation logic, but written out
+    // independently here rather than calling that function
+    expect(poster).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w500/euKFiO5M125rpngFRBbSW83beeI.jpg')
+})
