@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 // screen: used to query/find rendered elements (inputs, buttons, text)
 // waitFor: retries a check until it passes or times out — needed for
 // anything that depends on an async operation (like a fetch) finishing
+import userEvent from '@testing-library/user-event'
 import App from './App'
 
 // Runs before EVERY test in this file, giving each one a fresh, empty
@@ -82,4 +83,36 @@ test('shows trending shows on the empty state', async () => {
     // matching getPosterUrl's own concatenation logic, but written out
     // independently here rather than calling that function
     expect(poster).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w500/euKFiO5M125rpngFRBbSW83beeI.jpg')
+})
+
+test('typing a search term shows matching results', async () => {
+    // Trending fetch, fired on mount — matches nothing here since we
+    // don't care about trending shows in this test
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ results: [] }),
+    })
+
+    // Search fetch, fired after the 500ms debounce once typing happens
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            results: [{
+                id: 1418,
+                poster_path: "/euKFiO5M125rpngFRBbSW83beeI.jpg",
+                first_air_date: "2007",
+                name: "The Big Bang Theory",
+            }]
+        }),
+    })
+
+    render(<App />)
+
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'The Big Bang Theory')
+
+    // findByText already retries/waits — giving it a longer timeout
+    // covers the real 500ms debounce without needing fake timers
+    const result = await screen.findByText('The Big Bang Theory', {}, { timeout: 2000 })
+    expect(result).toBeInTheDocument()
 })
