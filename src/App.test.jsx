@@ -116,3 +116,31 @@ test('typing a search term shows matching results', async () => {
     const result = await screen.findByText('The Big Bang Theory', {}, { timeout: 2000 })
     expect(result).toBeInTheDocument()
 })
+
+// Simulates a failed search fetch (response.ok: false) and confirms the
+// generic error message appears. Note: App's .catch() ignores the actual
+// thrown error's message and always shows this fixed string — so the
+// mocked status code (500) doesn't need to be exact, it's never displayed.
+test('shows an error message when the search fetch fails', async () => {
+    // Trending fetch on mount — succeeds normally, not the focus here
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ results: [] }),
+    })
+
+    // Search fetch — simulates a bad response (e.g. server error)
+    fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+    })
+
+    render(<App />)
+    const input = screen.getByRole('textbox')
+
+    // Must actually type something — searchInput.length < 2 skips the
+    // fetch entirely, so without this the search fetch never fires
+    await userEvent.type(input, 'test')
+
+    const text = await screen.findByText("Couldn't search right now. Try again in a moment.")
+    expect(text).toBeInTheDocument()
+})
