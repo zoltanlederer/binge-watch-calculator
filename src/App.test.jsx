@@ -273,3 +273,77 @@ test('shows the correct total runtime pill after selecting a show', async () => 
     const runtime = await screen.findByText('0d 0h 22m')
     expect(runtime).toBeInTheDocument()
 })
+
+// Verifies getDaysToFinish's math using the default hoursPerDay (2),
+// hand-calculated independently: 22 minutes at 2h/day = 0 full days,
+// 0 hours, 22 minutes remaining.
+// Uses document.querySelector directly (not a text query) because the
+// hero-digits markup splits numbers and unit letters across nested
+// <span>s, so no single element's text content matches the full string.
+// findByText('0d 0h 22m') beforehand just ensures ShowDetail has
+// fully rendered before reading the DOM directly.
+test('shows the correct pace estimate at the default hours-per-day', async () => {
+    const totalMinutes = 22
+    const hoursPerDay = 2
+    const totalHours = totalMinutes / 60
+    const fullDays = Math.floor(totalHours / hoursPerDay)
+    const remainingHours = totalHours - (fullDays * hoursPerDay)
+    const hours = Math.floor(remainingHours)
+    const minutes = Math.round((remainingHours - hours) * 60)
+
+    // trending fetch (mount)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ results: [] }),
+    })
+
+    // search fetch (after typing)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            results: [{
+                id: 1418,
+                name: 'The Big Bang Theory',
+                poster_path: '/euKFiO5M125rpngFRBbSW83beeI.jpg',
+                first_air_date: '2007-09-24',
+            }],
+        }),
+    })
+
+    // show details fetch (after clicking the result)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            id: 1418,
+            name: 'The Big Bang Theory',
+            first_air_date: '2007-09-24',
+            poster_path: '/euKFiO5M125rpngFRBbSW83beeI.jpg',
+            backdrop_path: '/backdrop.jpg',
+            vote_average: 8.0,
+            overview: 'A group of physicists...',
+            number_of_seasons: 1,
+        }),
+    })
+
+    // season 1 fetch (Promise.all - one season since number_of_seasons: 1)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            episodes: [
+                { season_number: 1, episode_number: 1, runtime: 22 },
+            ],
+        }),
+    })
+
+    render(<App />)
+
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'The Big Bang Theory')
+
+    const result = await screen.findByText('The Big Bang Theory')
+    await userEvent.click(result)
+
+    await screen.findByText('0d 0h 22m') // waits until ShowDetail has fully rendered
+    const heroDigits = document.querySelector('.hero-digits')
+    expect(heroDigits.textContent).toBe('0d0h22m')
+})
