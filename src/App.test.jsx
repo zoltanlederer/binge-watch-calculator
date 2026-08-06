@@ -148,3 +148,68 @@ test('shows an error message when the search fetch fails', async () => {
     const text = await screen.findByText("Couldn't search right now. Try again in a moment.")
     expect(text).toBeInTheDocument()
 })
+
+// Simulates the full flow: search -> click a result -> details load ->
+// season data loads via Promise.all -> ShowDetail renders. Mocks four
+// sequential fetches in the exact order App.jsx makes them (trending on
+// mount, search, show details, one season fetch since
+// number_of_seasons: 1 keeps this to a single season mock).
+test('selecting a show loads and displays its details', async () => {
+    // trending fetch (mount)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ results: [] }),
+    })
+
+    // search fetch (after typing)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            results: [{
+                id: 1418,
+                name: 'The Big Bang Theory',
+                poster_path: '/euKFiO5M125rpngFRBbSW83beeI.jpg',
+                first_air_date: '2007-09-24',
+            }],
+        }),
+    })
+
+    // show details fetch (after clicking the result)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            id: 1418,
+            name: 'The Big Bang Theory',
+            first_air_date: '2007-09-24',
+            poster_path: '/euKFiO5M125rpngFRBbSW83beeI.jpg',
+            backdrop_path: '/backdrop.jpg',
+            vote_average: 8.0,
+            overview: 'A group of physicists...',
+            number_of_seasons: 1,
+        }),
+    })
+
+    // season 1 fetch (Promise.all - one season since number_of_seasons: 1)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            episodes: [
+                { season_number: 1, episode_number: 1, runtime: 22 },
+            ],
+        }),
+    })
+
+    render(<App />)
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'The Big Bang Theory')
+
+    // Click bubbles up from the <p> to the <li>'s onClick, so clicking
+    // the visible title text works without needing to query the <li> itself
+    const result = await screen.findByText('The Big Bang Theory')
+    await userEvent.click(result)
+
+    // handleSelectedShow clears matchingShow, so there's no risk of two
+    // "poster" elements with the same alt text existing at once here
+    const poster = await screen.findByRole('img', { name: 'The Big Bang Theory poster' })
+    expect(poster).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w500/euKFiO5M125rpngFRBbSW83beeI.jpg')
+})
