@@ -213,3 +213,63 @@ test('selecting a show loads and displays its details', async () => {
     const poster = await screen.findByRole('img', { name: 'The Big Bang Theory poster' })
     expect(poster).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w500/euKFiO5M125rpngFRBbSW83beeI.jpg')
 })
+
+// Verifies formatWatchTime's math (and the season-range filtering that
+// feeds it) by hand-calculating the expected pill text: one 22-minute
+// episode -> 0 days, 0 hours, 22 minutes
+test('shows the correct total runtime pill after selecting a show', async () => {
+    // trending fetch (mount)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ results: [] }),
+    })
+
+    // search fetch (after typing)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            results: [{
+                id: 1418,
+                name: 'The Big Bang Theory',
+                poster_path: '/euKFiO5M125rpngFRBbSW83beeI.jpg',
+                first_air_date: '2007-09-24',
+            }],
+        }),
+    })
+
+    // show details fetch (after clicking the result)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            id: 1418,
+            name: 'The Big Bang Theory',
+            first_air_date: '2007-09-24',
+            poster_path: '/euKFiO5M125rpngFRBbSW83beeI.jpg',
+            backdrop_path: '/backdrop.jpg',
+            vote_average: 8.0,
+            overview: 'A group of physicists...',
+            number_of_seasons: 1,
+        }),
+    })
+
+    // season 1 fetch (Promise.all - one season since number_of_seasons: 1)
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+            episodes: [
+                { season_number: 1, episode_number: 1, runtime: 22 },
+            ],
+        }),
+    })
+
+    render(<App />)
+
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'The Big Bang Theory')
+
+    const result = await screen.findByText('The Big Bang Theory')
+    await userEvent.click(result)
+
+    const runtime = await screen.findByText('0d 0h 22m')
+    expect(runtime).toBeInTheDocument()
+})
